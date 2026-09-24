@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Скрытие текста в изображении — RGB-стеганография</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="page">
+
+  <header class="header">
+    <h1 class="header__title">Скрытие текста в изображении</h1>
+    <p class="header__subtitle">
+      Каждый RGB-канал хранит один бит: <b>0</b> — значение канала не меняется, <b>1</b> — значение канала меняется ровно на 1.
+      Дешифрование сравнивает исходное и зашифрованное изображения.
+    </p>
+  </header>
+
+  <!-- Переключение экранов без перезагрузки страницы -->
+  <div class="tabs" role="tablist" aria-label="Режимы работы">
+    <button id="tab-encode" class="tab is-active" type="button" role="tab"
+            aria-selected="true" aria-controls="panel-encode">Шифрование</button>
+    <button id="tab-decode" class="tab" type="button" role="tab"
+            aria-selected="false" aria-controls="panel-decode">Дешифрование</button>
+  </div>
+
+  <!-- ==================================================================
+       ЭКРАН «ШИФРОВАНИЕ»
+       ================================================================== -->
+  <section id="panel-encode" class="panel" role="tabpanel" aria-labelledby="tab-encode">
+    <div class="grid">
+
+      <!-- 1. Текст -->
+      <div class="card">
+        <h2 class="card__title">1. Текст для шифрования</h2>
+        <textarea id="text-input" class="textarea" rows="9"
+                  placeholder="Введите текст для шифрования..."></textarea>
+        <div class="hint">Размер сообщения в UTF-8: <b id="text-size">0 байт</b></div>
+      </div>
+
+      <!-- 2. Исходное изображение -->
+      <div class="card">
+        <h2 class="card__title">2. Исходное изображение</h2>
+
+        <div id="drop-encode" class="dropzone">
+          <img id="preview-encode" class="dropzone__img" alt="Превью исходного изображения" hidden />
+          <div id="drop-encode-text" class="dropzone__text">Перетащите изображение сюда или выберите файл</div>
+        </div>
+
+        <input id="input-encode" type="file" accept="image/*" hidden />
+        <button id="btn-pick-encode" class="btn btn--ghost" type="button">Выбрать изображение</button>
+        <div class="hint" id="file-encode">&nbsp;</div>
+
+        <ul class="info">
+          <li><span>Размер изображения:</span><b id="info-size">—</b></li>
+          <li><span>Доступная ёмкость:</span><b id="info-capacity">—</b></li>
+          <li><span>Размер текста:</span><b id="info-text">0 байт</b></li>
+          <li><span>Статус:</span><b id="info-status" class="status">—</b></li>
+        </ul>
+
+        <button id="btn-encode" class="btn btn--primary btn--block" type="button">Зашифровать</button>
+        <div id="msg-encode" class="msg" hidden></div>
+      </div>
+
+      <!-- 3. Результат -->
+      <div class="card" id="result-encode-card" hidden>
+        <h2 class="card__title">3. Результат</h2>
+        <img id="preview-result" class="preview" alt="Изображение со скрытым текстом" />
+        <div class="hint" id="result-stats">&nbsp;</div>
+        <button id="btn-save" class="btn btn--primary btn--block" type="button">
+          Сохранить изображение (encrypted.png)
+        </button>
+        <button id="btn-reset-encode" class="btn btn--ghost btn--block" type="button">Начать заново</button>
+        <div class="hint">Сохраняйте результат именно в PNG: JPEG изменит значения каналов, и текст перестанет считываться.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       ЭКРАН «ДЕШИФРОВАНИЕ»
+       ================================================================== -->
+  <section id="panel-decode" class="panel is-hidden" role="tabpanel" aria-labelledby="tab-decode">
+    <div class="grid">
+
+      <!-- 1. Исходное изображение -->
+      <div class="card">
+        <h2 class="card__title">1. Исходное изображение</h2>
+
+        <div id="drop-original" class="dropzone">
+          <img id="preview-original" class="dropzone__img" alt="Превью исходного изображения" hidden />
+          <div id="drop-original-text" class="dropzone__text">Перетащите изображение сюда или выберите файл</div>
+        </div>
+
+        <input id="input-original" type="file" accept="image/*" hidden />
+        <button id="btn-pick-original" class="btn btn--ghost" type="button">Выбрать исходное изображение</button>
+        <div class="hint" id="file-original">&nbsp;</div>
+
+        <ul class="info">
+          <li><span>Размер:</span><b id="info-original-size">—</b></li>
+        </ul>
+      </div>
+
+      <!-- 2. Зашифрованное изображение -->
+      <div class="card">
+        <h2 class="card__title">2. Зашифрованное изображение</h2>
+
+        <div id="drop-encrypted" class="dropzone">
+          <img id="preview-encrypted" class="dropzone__img" alt="Превью зашифрованного изображения" hidden />
+          <div id="drop-encrypted-text" class="dropzone__text">Перетащите изображение сюда или выберите файл</div>
+        </div>
+
+        <input id="input-encrypted" type="file" accept="image/*" hidden />
+        <button id="btn-pick-encrypted" class="btn btn--ghost" type="button">Выбрать зашифрованное изображение</button>
+        <div class="hint" id="file-encrypted">&nbsp;</div>
+
+        <ul class="info">
+          <li><span>Размер:</span><b id="info-encrypted-size">—</b></li>
+        </ul>
+      </div>
+
+      <!-- 3. Результат -->
+      <div class="card card--full">
+        <h2 class="card__title">3. Дешифрование</h2>
+
+        <ul class="info">
+          <li><span>Проверка изображений:</span><b id="info-sizes" class="status">Загрузите оба изображения</b></li>
+        </ul>
+
+        <button id="btn-decode" class="btn btn--primary" type="button">Расшифровать</button>
+        <div id="msg-decode" class="msg" hidden></div>
+
+        <div id="result-decode" hidden>
+          <h3 class="card__subtitle">Результат дешифрования</h3>
+          <textarea id="result-text" class="textarea" rows="8" readonly></textarea>
+          <div class="row">
+            <button id="btn-copy" class="btn btn--ghost" type="button">Копировать текст</button>
+            <span class="hint" id="result-meta">&nbsp;</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    Работает полностью локально в браузере: без сервера, базы данных и внешних API.
+    Изображения не покидают ваш компьютер.
+  </footer>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
